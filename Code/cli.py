@@ -33,8 +33,11 @@ if __name__ == "__main__":
         elif choice == "3":
             db_connection.close()
             exit()
+        else:
+            print("Invalid choice. Please try again.")
+            continue
 
-        print("Welcome to the CLI Fantasy League!")
+        print("=== Welcome to the CLI Fantasy League! ===")
     
     db_connection.close()
 
