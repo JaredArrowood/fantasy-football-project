@@ -2,18 +2,20 @@
 import sqlite3
 
 CONNECTION_STRING = 'fantasy_league.db'
+USER = ""
 
 def login(db):
-    print("Login failed. Please try again.")
-    return False
-
-def register(db):
+    global USER
+    USER = input("Enter your username: ")
     return True
 
-if __name__ == "__main__":
-    db_connection = sqlite3.connect(CONNECTION_STRING)
-    db = db_connection.cursor()
-    
+def register(db):
+    global USER
+    USER = input("Enter your username: ")
+    return True
+
+# displays the login/signup portion of the CLI
+def main_menu(db):
     login_success = False
 
     while(login_success != True):
@@ -37,7 +39,19 @@ if __name__ == "__main__":
             print("Invalid choice. Please try again.")
             continue
 
-        print("=== Welcome to the CLI Fantasy League! ===")
-    
-    db_connection.close()
+        print(f"=== Welcome to the CLI Fantasy League, {USER}! ===")
 
+if __name__ == "__main__":
+    db_connection = sqlite3.connect(CONNECTION_STRING)
+    db = db_connection.cursor()
+    main_menu(db)
+
+    while(True):
+        print("4. Logout")
+        choice = input("Enter your choice: ")
+
+        if choice == "4":
+            print(f"=== Thank you for using the CLI Fantasy League, {USER}! ===")
+            main_menu(db)
+        else:
+            print("Invalid choice. Please try again.")
