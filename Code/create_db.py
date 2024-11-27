@@ -18,7 +18,7 @@ db.execute('DROP TABLE IF EXISTS defense_st_statistics')
 # user table
 db.execute('''
 CREATE TABLE user (
-    email TEXT PRIMARY KEY NOT NULL,
+    email TEXT PRIMARY KEY NOT NULL unique,
     username CHAR(100) NOT NULL,
     password CHAR(100) NOT NULL
 )

@@ -4,14 +4,71 @@ import sqlite3
 CONNECTION_STRING = 'fantasy_league.db'
 USER = ""
 
+def check_if_email_exists(db, email):
+    db.execute('''SELECT email
+                FROM user
+                WHERE email = ?''', (email,)) 
+    result = db.fetchone()
+    return result is not None
+
+def check_username(db, username):
+    db.execute('''SELECT username
+                FROM user
+                WHERE username = ?''', (username,))
+    result = db.fetchone()
+    return result is not None
+
+def check_password(db, password):
+    db.execute('''SELECT password
+                FROM user
+                WHERE password = ?''', (password,))
+    result = db.fetchone()
+    return result is not None
+
+
 def login(db):
     global USER
-    USER = input("Enter your username: ")
+    while(True):
+        email = input("Enter your email: ")
+        if(check_if_email_exists(db, email) == True):
+            USER = input("Enter your username: ")
+            if(check_username(db, USER) == False):
+                print("Username not found. Please try again or register an account with us!")
+                return False
+            else:
+                password = input("Enter your password: ")
+                if(check_password(db, password) == False):
+                    print("Password incorrect. Please try again.")
+                    return False
+                else:
+                    print(f"Welcome back, {USER}!")
+                    break
+        else:
+            print("Email not found. Please try again or register an account with us!")
+            return False
+
     return True
 
 def register(db):
     global USER
-    USER = input("Enter your username: ")
+    while(True):
+        email = input("Enter your email: ")
+        if(check_if_email_exists(db, email) == True):
+            print("Email already exists. Please try again.")
+            return False
+        else:
+            USER = input("Enter your username: ")
+            if(check_username(db, USER) == True):
+                print("Username already exists. Please try again.")
+                return False
+            else:
+                password = input("Enter your password: ")
+                db.execute('''INSERT INTO user (email, username, password)
+                            VALUES (?, ?, ?)''', (email, USER, password))
+                db_connection.commit()
+                print(f"Welcome to the CLI Fantasy League, {USER}!")
+                break
+
     return True
 
 # displays the login/signup portion of the CLI
@@ -25,6 +82,7 @@ def main_menu(db):
         choice = input("Enter your choice: ")
 
         if choice == "1":
+
             login_success = login(db)
             if not login_success:
                 continue
@@ -64,6 +122,7 @@ if __name__ == "__main__":
                 choice = input("Enter your choice: ")
                 if choice == "1":
                     print("Viewing Roster")
+                    #Should return the player's names, positions, and real team that are on the selected user's team
                     db.execute('''WITH team_players(player_id) AS 
                             (SELECT player_id 
                             FROM team, player, user
@@ -78,6 +137,8 @@ if __name__ == "__main__":
                         print(row)
                 elif choice == "2":
                     print("Adding Player")
+                    #Should update the player's team_id to the selected user's team_id, if it already has a different
+                    #team_id, thhen it will ask the user to pick another player
                     quit = False
                     while(True):
                         player_name = input("Enter the player's name: (Q to quit)")
@@ -108,7 +169,7 @@ if __name__ == "__main__":
 
         elif choice == "6":
             print("Viewing Player Statistics")
-
+            #Should return the selected player's statistics
             while(True):
                 player_name = input("Enter the player's name: (Q to Quit)")
                 if player_name == "Q":
