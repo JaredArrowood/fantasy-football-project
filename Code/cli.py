@@ -143,10 +143,18 @@ if __name__ == "__main__":
                     #team_id, thhen it will ask the user to pick another player
                     quit = False
                     while(True):
-                        player_name = input("Enter the player's name: (Q to quit)")
+                        player_name = input("Enter the player's name: (Q to quit) ")
                         if(player_name == "Q"):
                             quit = True
                             break
+                        # check if the player exists
+                        db.execute('''SELECT player_name
+                                    FROM player
+                                    WHERE player_name = ?''', (player_name,))
+                        condition = db.fetchone()
+                        if condition is None:
+                            print("Player not found. Please try again.")
+                            continue
                         #check if the player is already on a team
                         db.execute('''SELECT team_id
                                     FROM player
