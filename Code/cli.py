@@ -1,8 +1,13 @@
 #create a command line interface for the application
 import sqlite3
-
+class User():
+    def __init__(self, email, username, password):
+        self.email = email
+        self.username = username
+        self.password = password
+    
 CONNECTION_STRING = 'fantasy_league.db'
-USER = ""
+USER = User("", "", "")
 
 def check_if_email_exists(db, email):
     db.execute('''SELECT email
@@ -25,23 +30,28 @@ def check_password(db, password):
     result = db.fetchone()
     return result is not None
 
-
-def login(db):
-    global USER
+# use email and password to login
+def login(db, user):
+    USER = user
     while(True):
         email = input("Enter your email: ")
         if(check_if_email_exists(db, email) == True):
-            USER = input("Enter your username: ")
-            if(check_username(db, USER) == False):
-                print("Username not found. Please try again or register an account with us!")
-                return False
-            else:
                 password = input("Enter your password: ")
                 if(check_password(db, password) == False):
                     print("Password incorrect. Please try again.")
                     return False
                 else:
-                    print(f"Welcome back, {USER}!")
+                    #set default USER to the stored user values in the table
+                    db.execute('''SELECT username
+                                FROM user
+                                WHERE email = ?''', (email,))
+                    USER.username = db.fetchone()[0]
+                    db.execute('''SELECT password
+                                FROM user
+                                WHERE email = ?''', (email,))
+                    USER.password = db.fetchone()[0]
+                    USER.email = email
+                    print(f"Welcome back, {USER.username}!")
                     break
         else:
             print("Email not found. Please try again or register an account with us!")
@@ -49,9 +59,12 @@ def login(db):
 
     return True
 
-def register(db):
-    global USER
+def register(db, user):
+    USER = user
     while(True):
+        email = ""
+        username = ""
+        password = ""
         email = input("Enter your email: ")
         if(check_if_email_exists(db, email) == True):
             print("Email already exists. Please try again.")
@@ -64,11 +77,11 @@ def register(db):
             else:
                 password = input("Enter your password: ")
                 db.execute('''INSERT INTO user (email, username, password)
-                            VALUES (?, ?, ?)''', (email, USER, password))
+                            VALUES (?, ?, ?)''', (email, username, password))
                 db_connection.commit()
-                print(f"Welcome to the CLI Fantasy League, {USER}!")
+                print(f"Welcome to the CLI Fantasy League, {user.username}!")
                 break
-
+    USER = User(email, username, password)
     return True
 
 # displays the login/signup portion of the CLI
@@ -83,11 +96,11 @@ def main_menu(db):
 
         if choice == "1":
 
-            login_success = login(db)
+            login_success = login(db, USER)
             if not login_success:
                 continue
         elif choice == "2":
-            login_success = register(db)    
+            login_success = register(db, USER)    
             if not login_success:
                 continue
         elif choice == "3":
@@ -97,7 +110,7 @@ def main_menu(db):
             print("Invalid choice. Please try again.")
             continue
 
-        print(f"=== Welcome to the CLI Fantasy League, {USER}! ===")
+        print(f"=== Welcome to the CLI Fantasy League, {USER.username}! ===")
 
 if __name__ == "__main__":
     db_connection = sqlite3.connect(CONNECTION_STRING)
@@ -112,7 +125,7 @@ if __name__ == "__main__":
         choice = input("Enter your choice: ")
 
         if choice == "4":
-            print(f"=== Thank you for using the CLI Fantasy League, {USER}! ===")
+            print(f"=== Thank you for using the CLI Fantasy League, {USER.username}! ===")
             main_menu(db)
         elif choice == "5":
             while(True):
@@ -127,13 +140,13 @@ if __name__ == "__main__":
                     #players not on a team have a value of 0 in the team_id column
                     db.execute('''WITH team_players(player_id) AS 
                             (SELECT player_id 
-                            FROM team, player, user
-                            WHERE player.team_id = team.team_id AND team.email = user.email AND ? = user.username)
+                            FROM team, player
+                            WHERE player.team_id = team.team_id AND team.email = ?)
 
                                 SELECT player_name, position, real_team
                                     FROM team_players, player
                                     WHERE team_players.player_id = player.player_id
-                            ''', (USER,))
+                            ''', (USER.email,))
                     results = db.fetchall()
                     for row in results:
                         print(row)
@@ -143,7 +156,7 @@ if __name__ == "__main__":
                     #team_id, thhen it will ask the user to pick another player
                     quit = False
                     while(True):
-                        player_name = input("Enter the player's name: (Q to quit) ")
+                        player_name = input("Enter the player's name: (Q to quit)")
                         if(player_name == "Q"):
                             quit = True
                             break
@@ -171,9 +184,9 @@ if __name__ == "__main__":
                         db.execute('''
                             UPDATE player
                             SET team_id = (SELECT team_id
-                                   FROM team, user 
-                                   WHERE team.email = user.email AND ? = user.username)
-                                WHERE player_name = ?''', (USER,player_name,))
+                                   FROM team
+                                   WHERE team.email = ?)
+                                WHERE player_name = ?''', (USER.email,player_name,))
                         db_connection.commit()
                         print(f"{player_name} added to your team.")
                 elif choice == "3":
