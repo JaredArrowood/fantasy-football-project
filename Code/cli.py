@@ -119,10 +119,12 @@ if __name__ == "__main__":
                 print("1. View Roster")
                 print("2. Add Player")
                 print("3. Drop Player")
+                print("Q. Quit")
                 choice = input("Enter your choice: ")
                 if choice == "1":
                     print("Viewing Roster")
                     #Should return the player's names, positions, and real team that are on the selected user's team
+                    #players not on a team have a value of 0 in the team_id column
                     db.execute('''WITH team_players(player_id) AS 
                             (SELECT player_id 
                             FROM team, player, user
@@ -166,6 +168,13 @@ if __name__ == "__main__":
                                 WHERE player_name = ?''', (USER,player_name,))
                         db_connection.commit()
                         print(f"{player_name} added to your team.")
+                elif choice == "3":
+                    #drop player
+                    print("Dropping Player")
+                elif choice == "Q":
+                    break
+                else:
+                    print("Invalid choice. Please try again.")
             
 
         elif choice == "6":
