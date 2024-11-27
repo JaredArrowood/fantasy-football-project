@@ -29,7 +29,7 @@ db.execute('''
 CREATE TABLE team (
     team_id INTEGER PRIMARY KEY AUTOINCREMENT,
     team_name CHAR(100) NOT NULL,
-    email INTEGER NOT NULL,
+    email TEXT NOT NULL unique,
     FOREIGN KEY (email) REFERENCES user(email)
 )
 ''')

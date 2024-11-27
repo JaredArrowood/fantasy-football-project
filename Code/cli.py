@@ -126,12 +126,12 @@ if __name__ == "__main__":
                     db.execute('''WITH team_players(player_id) AS 
                             (SELECT player_id 
                             FROM team, player, user
-                            WHERE player.team_id = team.team_id AND team.email = user.email)
+                            WHERE player.team_id = team.team_id AND team.email = user.email AND ? = user.username)
 
                                 SELECT player_name, position, real_team
                                     FROM team_players, player
                                     WHERE team_players.player_id = player.player_id
-                            ''')
+                            ''', (USER,))
                     results = db.fetchall()
                     for row in results:
                         print(row)
@@ -149,8 +149,8 @@ if __name__ == "__main__":
                         db.execute('''SELECT team_id
                                     FROM player
                                     WHERE player_name = ?''', (player_name,))
-                        condition = db.fetchone()
-                        if(condition == None):
+                        condition = db.fetchone()[0]
+                        if(condition == 0):
                             print("Player Avaiable!")
                             break
                         else:
@@ -161,8 +161,9 @@ if __name__ == "__main__":
                         db.execute('''
                             UPDATE player
                             SET team_id = (SELECT team_id
-                                            FROM team, user, player
-                                            WHERE team.email = user.email AND player.player_name = ?)''', (player_name,))
+                                   FROM team, user 
+                                   WHERE team.email = user.email AND ? = user.username)
+                                WHERE player_name = ?''', (USER,player_name,))
                         db_connection.commit()
                         print(f"{player_name} added to your team.")
             
