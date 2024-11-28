@@ -31,8 +31,8 @@ def check_password(db, password):
     return result is not None
 
 # use email and password to login
-def login(db, user):
-    USER = user
+def login(db):
+    global USER
     while(True):
         email = input("Enter your email: ")
         if(check_if_email_exists(db, email) == True):
@@ -59,19 +59,16 @@ def login(db, user):
 
     return True
 
-def register(db, user):
-    USER = user
+def register(db):
+    global USER
     while(True):
-        email = ""
-        username = ""
-        password = ""
         email = input("Enter your email: ")
         if(check_if_email_exists(db, email) == True):
             print("Email already exists. Please try again.")
             return False
         else:
-            USER = input("Enter your username: ")
-            if(check_username(db, USER) == True):
+            username = input("Enter your username: ")
+            if(check_username(db, username) == True):
                 print("Username already exists. Please try again.")
                 return False
             else:
@@ -79,9 +76,12 @@ def register(db, user):
                 db.execute('''INSERT INTO user (email, username, password)
                             VALUES (?, ?, ?)''', (email, username, password))
                 db_connection.commit()
-                print(f"Welcome to the CLI Fantasy League, {user.username}!")
+                USER = User(email, username, password)
+                print(f"Welcome to the CLI Fantasy League, {USER.username}!")
                 break
-    USER = User(email, username, password)
+    db.execute('''INSERT INTO team (team_name, email)
+                VALUES (?, ?)''', (USER.username, USER.email))
+    db_connection.commit()
     return True
 
 # displays the login/signup portion of the CLI
@@ -96,11 +96,11 @@ def main_menu(db):
 
         if choice == "1":
 
-            login_success = login(db, USER)
+            login_success = login(db)
             if not login_success:
                 continue
         elif choice == "2":
-            login_success = register(db, USER)    
+            login_success = register(db)    
             if not login_success:
                 continue
         elif choice == "3":
@@ -109,7 +109,7 @@ def main_menu(db):
         else:
             print("Invalid choice. Please try again.")
             continue
-
+        
         print(f"=== Welcome to the CLI Fantasy League, {USER.username}! ===")
 
 if __name__ == "__main__":
@@ -179,8 +179,9 @@ if __name__ == "__main__":
                         else:
                             print("Player already in a team. Select another player.")
                     if(quit):
-                        continue
+                        break
                     else:
+                        #update the player relation to change their team_id to the user's team_id
                         db.execute('''
                             UPDATE player
                             SET team_id = (SELECT team_id
@@ -192,6 +193,49 @@ if __name__ == "__main__":
                 elif choice == "3":
                     #drop player
                     print("Dropping Player")
+                    #Should update the player's team_id to 0, if it already has a team_id of 0, then it will ask the user to pick another player
+                    quit = False
+                    while(True):
+                        player_name = input("Enter the player's name: (Q to quit)")
+                        if(player_name == "Q"):
+                            quit = True
+                            break
+                        # check if the player exists
+                        db.execute('''SELECT player_name
+                                    FROM player
+                                    WHERE player_name = ?''', (player_name,))
+                        condition = db.fetchone()
+                        if condition is None:
+                            print("Player not found. Please try again.")
+                            continue
+                        #check if the player is already on a team
+                        db.execute('''SELECT team_id
+                                    FROM player
+                                    WHERE player_name = ?''', (player_name,))
+                        condition = db.fetchone()[0]
+                        #if the team_id is already 0, then they are not on a team
+                        if(condition == 0):
+                            print("Player already not on a team. Select another player.")
+                            continue
+                        #check if the player is on the user's team, if not, then the cannot drop the player
+                        elif(condition != 0):
+                            db.execute('''SELECT team_id
+                                        FROM team
+                                        WHERE email = ?''', (USER.email,))
+                            team_id = db.fetchone()[0]
+                            if(condition != team_id):
+                                print("Player not on your team. Please try again.")
+                                continue
+                        if(quit):
+                            break
+                        else:
+                            #update the player relation to change their team_id to 0
+                            db.execute('''
+                                UPDATE player
+                                SET team_id = 0
+                                WHERE player_name = ?''', (player_name,))
+                            db_connection.commit()
+                            print(f"{player_name} dropped from your team.")
                 elif choice == "Q":
                     break
                 else:
