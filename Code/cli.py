@@ -23,10 +23,10 @@ def check_username(db, username):
     result = db.fetchone()
     return result is not None
 
-def check_password(db, password):
+def check_password(db, password, email):
     db.execute('''SELECT password
                 FROM user
-                WHERE password = ?''', (password,))
+                WHERE password = ? AND email = ?''', (password, email))
     result = db.fetchone()
     return result is not None
 
@@ -37,20 +37,16 @@ def login(db):
         email = input("Enter your email: ")
         if(check_if_email_exists(db, email) == True):
                 password = input("Enter your password: ")
-                if(check_password(db, password) == False):
+                if(check_password(db, password, email) == False):
                     print("Password incorrect. Please try again.")
                     return False
                 else:
                     #set default USER to the stored user values in the table
-                    db.execute('''SELECT username
-                                FROM user
+                    db.execute('''SELECT * from user
                                 WHERE email = ?''', (email,))
-                    USER.username = db.fetchone()[0]
-                    db.execute('''SELECT password
-                                FROM user
-                                WHERE email = ?''', (email,))
-                    USER.password = db.fetchone()[0]
-                    USER.email = email
+                    result = db.fetchone()
+                    USER = User(result[0], result[1], result[2])
+
                     print(f"Welcome back, {USER.username}!")
                     break
         else:
@@ -77,11 +73,15 @@ def register(db):
                             VALUES (?, ?, ?)''', (email, username, password))
                 db_connection.commit()
                 USER = User(email, username, password)
-                print(f"Welcome to the CLI Fantasy League, {USER.username}!")
                 break
+
+    # team creation
+    team_name = input("Enter your team name: ")
     db.execute('''INSERT INTO team (team_name, email)
-                VALUES (?, ?)''', (USER.username, USER.email))
+                VALUES (?, ?)''', (team_name, USER.email))
     db_connection.commit()
+    
+    print(f"Welcome to the CLI Fantasy League, {USER.username}!")
     return True
 
 # displays the login/signup portion of the CLI
@@ -109,8 +109,6 @@ def main_menu(db):
         else:
             print("Invalid choice. Please try again.")
             continue
-        
-        print(f"=== Welcome to the CLI Fantasy League, {USER.username}! ===")
 
 if __name__ == "__main__":
     db_connection = sqlite3.connect(CONNECTION_STRING)
