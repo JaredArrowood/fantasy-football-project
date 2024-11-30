@@ -272,7 +272,7 @@ def player_statistics(db):
                 msg += f" in Week {week}"
             print(msg)
         else:
-            headers = ["Player ID", "Week", "Passing Yards", "Rushing Yards", "Passing TDs", "Rusing TDs", "Receptions", "Fumbles", "Interceptions", "Total Points", "Is Starting"]
+            headers = ["Player ID", "Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
             print_table(headers, results)
 
 if __name__ == "__main__":
