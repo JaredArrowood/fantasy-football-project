@@ -134,6 +134,7 @@ def roster_menu(db):
         print("1. View Roster")
         print("2. Add Player")
         print("3. Drop Player")
+        print("4. Change Starting Lineup")
         print("Q. Quit")
         
         choice = input("Enter your choice: ")
@@ -143,15 +144,17 @@ def roster_menu(db):
         if choice == "1":
             print("===================================")
             print("> Viewing Roster")
-            db.execute('''WITH team_players(player_id) AS 
-                    (SELECT player_id 
-                    FROM team, player
-                    WHERE player.team_id = team.team_id AND team.email = ?)
+            db.execute('''WITH team_players(player_id, is_starting) AS 
+                    (SELECT DISTINCT player.player_id, is_starting
+                    FROM team, player, player_statistics
+                    WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = player_statistics.player_id)
 
-                        SELECT player_name, position, real_team
+                        SELECT player_name, position, real_team, is_starting
                             FROM team_players, player
                             WHERE team_players.player_id = player.player_id
                     ''', (USER.email,))
+            print("Player Name    Position    Real Team   Is Starting")
+            print("-----------------------------------")
             results = db.fetchall()
             for row in results:
                 print(row)
@@ -234,6 +237,91 @@ def roster_menu(db):
                             WHERE player_name = ?''', (player_name,))
                         db_connection.commit()
                         print(f"> {player_name} dropped from your team.")
+        elif choice == "4":
+            print("Changing Starting Lineup")
+            #Should update the player's is_starting value to True or False
+            #if the player is already starting, then it will ask the user to pick another player
+            quit = False
+            while(not quit):
+                player_name = input("Enter the player's name: (Q to quit) ")
+                if(player_name == "Q"):
+                    quit = True
+                    continue
+                # check if the player exists
+                db.execute('''SELECT player_name, team_id
+                            FROM player
+                            WHERE player_name = ?''', (player_name,))
+                condition = db.fetchone()
+                if condition is None:
+                    print("> Player not found. Please try again.")
+                    continue
+                #check if the player is already on a team
+                if(condition[1] == 0):
+                    print("> Player not on a team. Select another player.")
+                    continue
+                #check if the player is on the user's team, if not, then the cannot change the players status
+                elif(condition[1] != 0):
+                    db.execute('''SELECT team_id
+                                FROM team
+                                WHERE email = ?''', (USER.email,))
+                    team_id = db.fetchone()[0]
+                    if(condition[1] != team_id):
+                        print("> Player not on your team. Please try again.")
+                        continue
+                    else:
+                        quit = True
+                        #check if the player is already starting
+                        db.execute('''SELECT is_starting
+                                   FROM player_statistics
+                                   WHERE player_id = (SELECT player_id
+                                                      FROM player
+                                                      WHERE player_name = ?)''', (player_name,))
+                        is_starting = db.fetchone()[0]
+                        if(is_starting == True):
+                            print("> Player is already starting.")
+                            bench = input("Would you like to bench them? (Y/N): ")
+                            if(bench == "Y"):
+                                db.execute('''
+                                    UPDATE player_statistics
+                                    SET is_starting = False
+                                    WHERE player_id = (SELECT player_id
+                                                      FROM player
+                                                      WHERE player_name = ?)''', (player_name,))
+                                db_connection.commit()
+                                print(f"> {player_name} benched.")
+                            else:
+                                print("> Player not benched.")
+                                continue
+                        else:
+                            #make sure the count of starting players is less than 9
+                            db.execute('''WITH team_players(player_id, is_starting) AS 
+                                        (SELECT DISTINCT player.player_id, is_starting
+                                            FROM team, player, player_statistics
+                                            WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = player_statistics.player_id)
+                                       
+                                       SELECT COUNT(*)
+                                       FROM team_players
+                                       WHERE is_starting = True''', (USER.email,))
+                            count = db.fetchone()[0]
+                            print(count)
+                            if(count >= 9):
+                                print("> You already have 9 players starting. Please bench a player.")
+                                continue
+                            else:
+                                start = input(f"> {player_name} is not starting. Would you like to start them? (Y/N):")
+                                if(start == "Y"):
+                            
+                                    db.execute('''
+                                        UPDATE player_statistics
+                                        SET is_starting = True
+                                        WHERE player_id = (SELECT player_id
+                                                        FROM player
+                                                        WHERE player_name = ?)''', (player_name,))
+                                    db_connection.commit()
+                                    print(f"> {player_name} is now starting. You have {count + 1} players starting.")
+                                else:
+                                    print(f"> {player_name} is not starting.")
+        
         elif choice == "Q":
             break
         else:
