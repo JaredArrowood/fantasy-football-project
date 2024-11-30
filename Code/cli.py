@@ -9,6 +9,22 @@ class User():
 CONNECTION_STRING = 'fantasy_league.db'
 USER = User("", "", "")
 
+def print_table(headers, data):
+    # Print the header row
+    header_row = ""
+    for header in headers:
+        header_row += f"{header:<15}"
+    
+    print(header_row)
+    print("-" * len(header_row))
+
+    # Print each data row
+    for row in data:
+        row_str = ""
+        for col in row:
+            row_str += f"{str(col):<15}"
+        print(row_str)
+
 # region User Functions
 def check_if_email_exists(db, email):
     db.execute('''SELECT email
@@ -226,23 +242,38 @@ def roster_menu(db):
 
 def player_statistics(db):
     print("> Viewing Player Statistics")
-    #Should return the selected player's statistics
+    #Should return the selected player's statistics for a given week
     while(True):
         player_name = input("Enter the player's name: (Q to Quit) ")
         if player_name == "Q":
             break
-        db.execute('''SELECT * 
+        week = input("Enter the week (A to view all weeks): ")
+        query = '''SELECT * 
                     FROM player_statistics
                     WHERE player_id = (SELECT player_id
                                         FROM player
-                                        WHERE player_name = ?)''', (player_name,))
+                                        WHERE player_name = ?'''
+        params = [player_name]
+        if (week != "A"):
+            # check if the week is a number
+            if not week.isdigit():
+                print("> Invalid week. Please try again.")
+                continue
+            query += " AND week = ?"
+            params.append(week)
+        query += ")"
+
+        db.execute(query, params)
+
         results = db.fetchall()
         if len(results) == 0:
-            print("> Player not found.")
+            msg = f"> No statistics found for {player_name}"
+            if week != "A":
+                msg += f" in Week {week}"
+            print(msg)
         else:
-            for row in results:
-                print("TODO: IMPROVE PRINTING OF PLAYER STATISTICS")
-                print(row)
+            headers = ["Player ID", "Week", "Passing Yards", "Rushing Yards", "Passing TDs", "Rusing TDs", "Receptions", "Fumbles", "Interceptions", "Total Points", "Is Starting"]
+            print_table(headers, results)
 
 if __name__ == "__main__":
     db_connection = sqlite3.connect(CONNECTION_STRING)
