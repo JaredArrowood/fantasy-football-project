@@ -47,6 +47,67 @@ def check_password(db, password, email):
     result = db.fetchone()
     return result is not None
 
+def find_team_players(db, email):
+    db.execute('''WITH team_players(player_id, is_starting) AS 
+                    (SELECT DISTINCT player.player_id, is_starting
+                    FROM team, player, player_statistics
+                    WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = player_statistics.player_id)
+
+                        SELECT player_name, position, real_team, is_starting
+                            FROM team_players, player
+                            WHERE team_players.player_id = player.player_id''' , (email,))
+    return db.fetchall()
+
+def count_players_by_position(db, email, position):
+    db.execute('''WITH team_players(player_id, is_starting) AS 
+                    (SELECT DISTINCT player.player_id, is_starting
+                    FROM team, player, player_statistics
+                    WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = player_statistics.player_id),
+                        roster_stats(player_name, position, real_team, is_starting) AS 
+                            (SELECT player_name, position, real_team, is_starting
+                            FROM team_players, player
+                            WHERE team_players.player_id = player.player_id)
+               
+    SELECT COUNT(*)
+    FROM roster_stats
+    WHERE position = ? AND is_starting = True''', (email, position))
+
+    result = db.fetchone()
+    return result[0]
+    
+                   
+#checks for the number of starting players in each position (Still needs Defense)
+def check_starting_player_counts(db):
+    print("Starting Player Counts:")
+    print(f"{count_players_by_position(db, USER.email, 'QB')} QBs")
+    print(f"{count_players_by_position(db, USER.email, 'RB')} RBs")
+    print(f"{count_players_by_position(db, USER.email, 'WR')} WRs")
+    print(f"{count_players_by_position(db, USER.email, 'TE')} TEs")
+    print(f"{count_players_by_position(db, USER.email, 'K')} Ks")
+
+    if(count_players_by_position(db, USER.email, 'QB') > 1):
+        print("You may only have 1 starting QB.")
+        # return False
+    flex_count = count_players_by_position(db, USER.email, 'RB') + count_players_by_position(db, USER.email, 'WR') + count_players_by_position(db, USER.email, 'TE')
+    if(flex_count > 6):
+        print("You may only have 2 starting RBs, 2 WRs, 1TE and 1 FLX in total.")
+    if(count_players_by_position(db, USER.email, 'K') > 1):
+        print("You may only have 1 starting K.")
+        # return False
+
+    #check if you have too little starting players
+    if(count_players_by_position(db, USER.email, 'QB') < 1):
+        print("You must have 1 starting QB.")
+    if(flex_count < 6):
+        print("You must have 2 starting RBs, 2 WRs, 1TE and 1 FLX in total.")
+        # return False
+    if(count_players_by_position(db, USER.email, 'K') < 1):
+        print("You must have 1 starting K.")
+        # return False
+
+    # return True
+    
+
 # use email and password to login
 def login(db):
     global USER
@@ -144,6 +205,7 @@ def roster_menu(db):
         if choice == "1":
             print("===================================")
             print("> Viewing Roster")
+            check_starting_player_counts(db)
             db.execute('''WITH team_players(player_id, is_starting) AS 
                     (SELECT DISTINCT player.player_id, is_starting
                     FROM team, player, player_statistics
@@ -156,6 +218,7 @@ def roster_menu(db):
             print("Player Name    Position    Real Team   Is Starting")
             print("-----------------------------------")
             results = db.fetchall()
+            # print(check_starting_player_counts(db))
             for row in results:
                 print(row)
         #Should update the player's team_id to the selected user's team_id, if it already has a different
