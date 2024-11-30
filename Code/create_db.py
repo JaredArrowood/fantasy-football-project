@@ -18,7 +18,7 @@ db.execute('DROP TABLE IF EXISTS defense_st_statistics')
 # user table
 db.execute('''
 CREATE TABLE user (
-    email TEXT PRIMARY KEY NOT NULL,
+    email TEXT PRIMARY KEY NOT NULL unique,
     username CHAR(100) NOT NULL,
     password CHAR(100) NOT NULL
 )
@@ -29,7 +29,7 @@ db.execute('''
 CREATE TABLE team (
     team_id INTEGER PRIMARY KEY AUTOINCREMENT,
     team_name CHAR(100) NOT NULL,
-    email INTEGER NOT NULL,
+    email TEXT NOT NULL unique,
     FOREIGN KEY (email) REFERENCES user(email)
 )
 ''')
@@ -42,8 +42,8 @@ CREATE TABLE matchup (
     week INTEGER NOT NULL,
     home_team_id INTEGER NOT NULL,
     away_team_id INTEGER NOT NULL,
-    away_team_points INTEGER NOT NULL,
-    home_team_points INTEGER NOT NULL,
+    away_team_points REAL NOT NULL,
+    home_team_points REAL NOT NULL,
     FOREIGN KEY (home_team_id) REFERENCES team(team_id),
     FOREIGN KEY (away_team_id) REFERENCES team(team_id)
     PRIMARY KEY (week, home_team_id, away_team_id),
@@ -80,14 +80,16 @@ db.execute('''
 CREATE TABLE player_statistics (
     player_id INTEGER NOT NULL,
     week INTEGER NOT NULL,
-    passing_yards INTEGER NOT NULL,
-    rushing_yards INTEGER NOT NULL,
-    passing_td INTEGER NOT NULL,
-    rushing_td INTEGER NOT NULL,
-    receptions INTEGER NOT NULL,
-    fumbles INTEGER NOT NULL,
-    interceptions INTEGER NOT NULL,
-    total_points INTEGER NOT NULL,
+    passing_yards REAL NOT NULL,
+    rushing_yards REAL NOT NULL,
+    receiving_yards REAL NOT NULL,
+    passing_td REAL NOT NULL,
+    rushing_td REAL NOT NULL,
+    recieving_td REAL NOT NULL,
+    receptions REAL NOT NULL,
+    fumbles REAL NOT NULL,
+    interceptions REAL NOT NULL,
+    total_points REAL NOT NULL,
     is_starting BOOLEAN NOT NULL,
     FOREIGN KEY (player_id) REFERENCES player(player_id),
     PRIMARY KEY (player_id, week)
@@ -99,11 +101,11 @@ db.execute('''
 CREATE TABLE kicker_statistics (
     player_id INTEGER NOT NULL,
     week INTEGER NOT NULL,
-    field_goals_made INTEGER NOT NULL,
-    field_goals_attempted INTEGER NOT NULL,
-    extra_points_made INTEGER NOT NULL,
-    extra_points_attempted INTEGER NOT NULL,
-    total_points INTEGER NOT NULL,
+    field_goals_made REAL NOT NULL,
+    field_goals_attempted REAL NOT NULL,
+    extra_points_made REAL NOT NULL,
+    extra_points_attempted REAL NOT NULL,
+    total_points REAL NOT NULL,
     is_starting BOOLEAN NOT NULL,
     FOREIGN KEY (player_id) REFERENCES player(player_id),
     PRIMARY KEY (player_id, week)
@@ -115,12 +117,13 @@ db.execute('''
 CREATE TABLE defense_st_statistics (
     defense_st_id INTEGER NOT NULL,
     week INTEGER NOT NULL,
-    interceptions_recovered INTEGER NOT NULL,
-    def_touchdowns INTEGER NOT NULL,
-    fumbles_recovered INTEGER NOT NULL,
-    yards_allowed INTEGER NOT NULL,
-    points_allowed INTEGER NOT NULL,
-    total_points INTEGER NOT NULL,
+    interceptions REAL NOT NULL,
+    def_touchdowns REAL NOT NULL,
+    fumbles_recovered REAL NOT NULL,
+    sacks REAL NOT NULL,
+    yards_allowed REAL NOT NULL,  
+    points_allowed REAL NOT NULL,
+    total_points REAL NOT NULL,
     is_starting BOOLEAN NOT NULL,
     FOREIGN KEY (defense_st_id) REFERENCES defense_st(defense_st_id),
     PRIMARY KEY (defense_st_id, week)
