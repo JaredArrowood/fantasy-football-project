@@ -13,13 +13,18 @@ def print_table(headers, data):
     # Determine the width of each column
     col_widths = [max(len(str(item)) for item in col) for col in zip(*data, headers)]
     
+    # Determine the width of each column
+    col_widths = [max(len(str(item)) for item in col) for col in zip(*data, headers)]
+    
     # Print the header row
+    header_row = " | ".join(f"{header:<{col_widths[i]}}" for i, header in enumerate(headers))
     header_row = " | ".join(f"{header:<{col_widths[i]}}" for i, header in enumerate(headers))
     print(header_row)
     print("-" * len(header_row))
 
     # Print each data row
     for row in data:
+        row_str = " | ".join(f"{str(col):<{col_widths[i]}}" for i, col in enumerate(row))
         row_str = " | ".join(f"{str(col):<{col_widths[i]}}" for i, col in enumerate(row))
         print(row_str)
 
@@ -219,8 +224,9 @@ def roster_menu(db):
                             WHERE team_players.player_id = player.player_id
                         ''', (USER.email,))
             results = db.fetchall()
+            clean_results = [(*item[:-1], bool(item[-1])) for item in results] # convert 0/1 to True/False
             headers = ["Player Name", "Position", "Real Team", "Is Starting"]
-            print_table(headers, results)
+            print_table(headers, clean_results)
         #Should update the player's team_id to the selected user's team_id, if it already has a different
         #team_id, thhen it will ask the user to pick another player
         elif choice == "2":
