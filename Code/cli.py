@@ -463,13 +463,21 @@ def view_all_players(db):
             print("Invalid team. Please try again.")
             continue
 
+        # give the option to see all players or only see available players
+        only_available = input("View only available players? (Y/N): ")
+
         # Return all players for the selected real team
         print("===================================")
         print("Viewing Players for " + selected_team)
         print("===================================")
-        db.execute('''SELECT player_name, position, real_team
+        query = '''SELECT player_name, position, real_team
                     FROM player
-                    WHERE real_team = ?''', (selected_team,))
+                    WHERE real_team = ?'''
+        
+        if only_available.lower() == 'y':
+            query += ''' AND team_id = 0 OR team_id IS NULL'''
+
+        db.execute(query, (selected_team,))
         results = db.fetchall()
         headers = ["Player Name", "Position", "Real Team"]
         print_table(headers, results)
