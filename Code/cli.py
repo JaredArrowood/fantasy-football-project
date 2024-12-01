@@ -10,19 +10,17 @@ CONNECTION_STRING = 'fantasy_league.db'
 USER = User("", "", "")
 
 def print_table(headers, data):
-    # Print the header row
-    header_row = ""
-    for header in headers:
-        header_row += f"{header:<15}"
+    # Determine the width of each column
+    col_widths = [max(len(str(item)) for item in col) for col in zip(*data, headers)]
     
+    # Print the header row
+    header_row = " | ".join(f"{header:<{col_widths[i]}}" for i, header in enumerate(headers))
     print(header_row)
     print("-" * len(header_row))
 
     # Print each data row
     for row in data:
-        row_str = ""
-        for col in row:
-            row_str += f"{str(col):<15}"
+        row_str = " | ".join(f"{str(col):<{col_widths[i]}}" for i, col in enumerate(row))
         print(row_str)
 
 # region User Functions
@@ -168,11 +166,12 @@ def main_menu(db):
     login_success = False
 
     while(login_success != True):
+        print("===================================")
         print("1. Login")
         print("2. Register")
         print("3. Exit")
+        print("===================================")
         choice = input("Enter your choice: ")
-
         if choice == "1":
 
             login_success = login(db)
@@ -186,6 +185,7 @@ def main_menu(db):
             db_connection.close()
             exit()
         else:
+            print("===================================")
             print("Invalid choice. Please try again.")
             continue
 
@@ -197,6 +197,7 @@ def roster_menu(db):
         print("3. Drop Player")
         print("4. Change Starting Lineup")
         print("Q. Quit")
+        print("===================================")
         
         choice = input("Enter your choice: ")
 
@@ -205,6 +206,8 @@ def roster_menu(db):
         if choice == "1":
             print("===================================")
             print("> Viewing Roster")
+            print("===================================")
+
             check_starting_player_counts(db)
             db.execute('''WITH team_players(player_id, is_starting) AS 
                     (SELECT DISTINCT player.player_id, is_starting
@@ -214,22 +217,19 @@ def roster_menu(db):
                         SELECT player_name, position, real_team, is_starting
                             FROM team_players, player
                             WHERE team_players.player_id = player.player_id
-                    ''', (USER.email,))
-            print("Player Name    Position    Real Team   Is Starting")
-            print("-----------------------------------")
+                        ''', (USER.email,))
             results = db.fetchall()
-            # print(check_starting_player_counts(db))
-            for row in results:
-                print(row)
+            headers = ["Player Name", "Position", "Real Team", "Is Starting"]
+            print_table(headers, results)
         #Should update the player's team_id to the selected user's team_id, if it already has a different
         #team_id, thhen it will ask the user to pick another player
         elif choice == "2":
             print("===================================")
-            print("> Adding Player")
+            print("Adding Player")
             quit = False
             while(not quit):
                 player_name = input("Enter the player's name: (Q to quit) ")
-                if(player_name == "Q"):
+                if(player_name == "Q" or player_name == "q"):
                     quit = True
                     continue
                 # check if the player exists
@@ -238,7 +238,8 @@ def roster_menu(db):
                             WHERE player_name = ?''', (player_name,))
                 condition = db.fetchone()
                 if condition is None:
-                    print("> Player not found. Please try again.")
+                    print("===================================")
+                    print("Player not found. Please try again.")
                     continue
                 #check if the player is already on a team
                 db.execute('''SELECT team_id
@@ -246,7 +247,8 @@ def roster_menu(db):
                             WHERE player_name = ?''', (player_name,))
                 condition = db.fetchone()[0]
                 if(condition == 0):
-                    print("> Player Avaiable!")
+                    print("===================================")
+                    print("Player Avaiable!")
                     #update the player relation to change their team_id to the user's team_id
                     db.execute('''
                         UPDATE player
@@ -255,19 +257,21 @@ def roster_menu(db):
                                 WHERE team.email = ?)
                             WHERE player_name = ?''', (USER.email,player_name,))
                     db_connection.commit()
-                    print(f"> {player_name} added to your team.")
+                    print("===================================")
+                    print(f"{player_name} added to your team.")
                     quit = True
                 else:
-                    print("> Player already in a team. Select another player.")
+                    print("===================================")
+                    print("Player already in a team. Select another player.")
         elif choice == "3":
             #drop player
             print("===================================")
-            print("> Dropping Player")
+            print("Dropping Player")
             #Should update the player's team_id to 0, if it already has a team_id of 0, then it will ask the user to pick another player
             quit = False
             while(not quit):
                 player_name = input("Enter the player's name: (Q to quit) ")
-                if(player_name == "Q"):
+                if(player_name == "Q" or player_name == "q"):
                     quit = True
                     continue
                 # check if the player exists
@@ -276,11 +280,13 @@ def roster_menu(db):
                             WHERE player_name = ?''', (player_name,))
                 condition = db.fetchone()
                 if condition is None:
-                    print("> Player not found. Please try again.")
+                    print("===================================")
+                    print("Player not found. Please try again.")
                     continue
                 #check if the player is already on a team
                 if(condition[1] == 0):
-                    print("> Player already not on a team. Select another player.")
+                    print("===================================")
+                    print("Player already not on a team. Select another player.")
                     continue
                 #check if the player is on the user's team, if not, then the cannot drop the player
                 elif(condition[1] != 0):
@@ -289,7 +295,8 @@ def roster_menu(db):
                                 WHERE email = ?''', (USER.email,))
                     team_id = db.fetchone()[0]
                     if(condition[1] != team_id):
-                        print("> Player not on your team. Please try again.")
+                        print("===================================")
+                        print("Player not on your team. Please try again.")
                         continue
                     else:
                         quit = True
@@ -307,7 +314,7 @@ def roster_menu(db):
             quit = False
             while(not quit):
                 player_name = input("Enter the player's name: (Q to quit) ")
-                if(player_name == "Q"):
+                if(player_name == "Q" or player_name == "q"):
                     quit = True
                     continue
                 # check if the player exists
@@ -385,18 +392,20 @@ def roster_menu(db):
                                 else:
                                     print(f"> {player_name} is not starting.")
         
-        elif choice == "Q":
+        elif choice == "Q" or choice == "q":
             break
         else:
             print("===================================")            
             print("> Invalid choice. Please try again.")
 
 def player_statistics(db):
-    print("> Viewing Player Statistics")
+    print("===================================")
+    print("Viewing Player Statistics")
+    print("===================================")
     #Should return the selected player's statistics for a given week
     while(True):
         player_name = input("Enter the player's name: (Q to Quit) ")
-        if player_name == "Q":
+        if player_name == "Q" or player_name == "q":
             break
         week = input("Enter the week (A to view all weeks): ")
         query = '''SELECT * 
@@ -405,7 +414,7 @@ def player_statistics(db):
                                         FROM player
                                         WHERE player_name = ?'''
         params = [player_name]
-        if (week != "A"):
+        if (week != "A" and week != "a"):
             # check if the week is a number
             if not week.isdigit():
                 print("> Invalid week. Please try again.")
@@ -419,12 +428,49 @@ def player_statistics(db):
         results = db.fetchall()
         if len(results) == 0:
             msg = f"> No statistics found for {player_name}"
-            if week != "A":
+            if week != "A" and week != "a":
                 msg += f" in Week {week}"
+            print("===================================")
             print(msg)
         else:
-            headers = ["Player ID", "Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
-            print_table(headers, results)
+            # displaying everything except the player_id
+            rest = [result[1:] for result in results]
+            headers = ["Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
+            print_table(headers, rest)
+
+def view_all_players(db):
+    while True:
+        print("===================================")
+        print("Viewing All Teams")
+        print("===================================")
+        db.execute('''SELECT DISTINCT real_team FROM player''')
+        teams = db.fetchall()
+        
+        # List teams on four lines, with 8 teams per line
+        teams_per_line = 8
+        for i in range(0, len(teams), teams_per_line):
+            print(", ".join(team[0] for team in teams[i:i + teams_per_line]))
+
+        # Allow user to select a real team
+        selected_team = input("Enter the real team to view players for (Q to quit): ")
+        if selected_team.lower() == 'q':
+            break
+        if selected_team not in [team[0] for team in teams]:
+            print("===================================")
+            print("Invalid team. Please try again.")
+            continue
+
+        # Return all players for the selected real team
+        print("===================================")
+        print("Viewing Players for " + selected_team)
+        print("===================================")
+        db.execute('''SELECT player_name, position, real_team
+                    FROM player
+                    WHERE real_team = ?''', (selected_team,))
+        results = db.fetchall()
+        headers = ["Player Name", "Position", "Real Team"]
+        print_table(headers, results)
+
 
 if __name__ == "__main__":
     db_connection = sqlite3.connect(CONNECTION_STRING)
@@ -432,18 +478,24 @@ if __name__ == "__main__":
     main_menu(db)
 
     while(True):
+        print("Home Menu")
+        print("===================================")
         print(f"1. {USER.username}'s Roster")
         print("2. View Player Statistics")
+        print("3. View all players")
         print("L. Logout")
+        print("===================================")
 
         choice = input("Enter your choice: ")
 
-        if choice == "L":
+        if choice == "L" or choice == "l":
             print(f"=== Thank you for using the CLI Fantasy League, {USER.username}! ===")
             main_menu(db)
         elif choice == "1":
             roster_menu(db)
         elif choice == "2":
             player_statistics(db)
+        elif choice == "3":
+            view_all_players(db)
         else:
             print("> Invalid choice. Please try again.")
