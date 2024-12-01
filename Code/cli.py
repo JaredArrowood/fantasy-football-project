@@ -284,8 +284,10 @@ def player_statistics(db):
             print("===================================")
             print(msg)
         else:
-            headers = ["Player ID", "Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
-            print_table(headers, results)
+            # displaying everything except the player_id
+            rest = [result[1:] for result in results]
+            headers = ["Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
+            print_table(headers, rest)
 
 def view_all_players(db):
     while True:
