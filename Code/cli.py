@@ -13,18 +13,14 @@ def print_table(headers, data):
     # Determine the width of each column
     col_widths = [max(len(str(item)) for item in col) for col in zip(*data, headers)]
     
-    # Determine the width of each column
-    col_widths = [max(len(str(item)) for item in col) for col in zip(*data, headers)]
-    
     # Print the header row
     header_row = " | ".join(f"{header:<{col_widths[i]}}" for i, header in enumerate(headers))
-    header_row = " | ".join(f"{header:<{col_widths[i]}}" for i, header in enumerate(headers))
+
     print(header_row)
     print("-" * len(header_row))
 
     # Print each data row
     for row in data:
-        row_str = " | ".join(f"{str(col):<{col_widths[i]}}" for i, col in enumerate(row))
         row_str = " | ".join(f"{str(col):<{col_widths[i]}}" for i, col in enumerate(row))
         print(row_str)
 
@@ -227,6 +223,7 @@ def roster_menu(db):
             clean_results = [(*item[:-1], bool(item[-1])) for item in results] # convert 0/1 to True/False
             headers = ["Player Name", "Position", "Real Team", "Is Starting"]
             print_table(headers, clean_results)
+            
         #Should update the player's team_id to the selected user's team_id, if it already has a different
         #team_id, thhen it will ask the user to pick another player
         elif choice == "2":
@@ -312,7 +309,8 @@ def roster_menu(db):
                             SET team_id = 0
                             WHERE player_name = ?''', (player_name,))
                         db_connection.commit()
-                        print(f"> {player_name} dropped from your team.")
+                        print("===================================")
+                        print(f"{player_name} dropped from your team.")
         elif choice == "4":
             print("Changing Starting Lineup")
             #Should update the player's is_starting value to True or False
@@ -397,7 +395,6 @@ def roster_menu(db):
                                     print(f"> {player_name} is now starting. You have {count + 1} players starting.")
                                 else:
                                     print(f"> {player_name} is not starting.")
-        
         elif choice == "Q" or choice == "q":
             break
         else:
