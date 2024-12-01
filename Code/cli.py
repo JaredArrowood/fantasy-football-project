@@ -466,6 +466,7 @@ def player_statistics(db):
         else:
             # displaying everything except the player_id
             rest = [result[1:] for result in results]
+            rest = [(*item[:-1], bool(item[-1])) for item in rest] # convert 0/1 to True/False
             headers = ["Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
             print_table(headers, rest)
 
@@ -506,9 +507,50 @@ def kicker_statistics(db):
         else:
             # displaying everything except the player_id
             rest = [result[1:] for result in results]
+            rest = [(*item[:-1], bool(item[-1])) for item in rest] # convert 0/1 to True/False
             headers = ["Week", "Field Goals Made", "Field Goals Attempted", "Extra Points Made", "Extra Points Attempted", "Total Points", "Is Starting"]
             print_table(headers, rest)
 
+def defense_statistics(db):
+    print("===================================")
+    print("Viewing Defense/ST Statistics")
+    print("===================================")
+    #Should return the selected player's statistics for a given week
+    while(True):
+        defense_name = input("Enter the teams's name: (Q to Quit) ")
+        if defense_name.lower() == "q":
+            break
+        week = input("Enter the week (A to view all weeks): ")
+        query = '''SELECT * 
+                    FROM defense_st_statistics
+                    WHERE defense_st_id = (SELECT defense_st_id
+                                        FROM defense_st
+                                        WHERE real_team = ?'''
+        params = [defense_name]
+        if (week != "A" and week != "a"):
+            # check if the week is a number
+            if not week.isdigit():
+                print("> Invalid week. Please try again.")
+                continue
+            query += " AND week = ?"
+            params.append(week)
+        query += ")"
+
+        db.execute(query, params)
+
+        results = db.fetchall()
+        if len(results) == 0:
+            msg = f"> No defense/st statistics found for {defense_name}"
+            if week != "A" and week != "a":
+                msg += f" in Week {week}"
+            print("===================================")
+            print(msg)
+        else:
+            # displaying everything except the player_id
+            rest = [result[1:] for result in results]
+            rest = [(*item[:-1], bool(item[-1])) for item in rest] # convert 0/1 to True/False
+            headers = ["Week", "Interceptions", "Defensive TDs", "Fumbles Recovered", "Sacks", "Yds. Allowed", "Points Allowed", "Total Points", "Is Starting"]
+            print_table(headers, rest)
 
 def view_all_players(db):
     while True:
@@ -576,6 +618,7 @@ if __name__ == "__main__":
         print(f"1. Manage {USER.team_name}")
         print("2. View Player Statistics")
         print("2.1 View Kicker Statistics")
+        print("2.2 View Defense Statistics")
         print("3. View all players")
         print("4. View available defenses")
         print("L. Logout")
@@ -592,6 +635,8 @@ if __name__ == "__main__":
             player_statistics(db)
         elif choice == "2.1":
             kicker_statistics(db)
+        elif choice == "2.2":
+            defense_statistics(db)
         elif choice == "3":
             view_all_players(db)
         elif choice == "4":

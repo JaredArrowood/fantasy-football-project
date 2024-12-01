@@ -2,7 +2,7 @@
 
 - [ ] Statistics
   - [x] Improve the printing of statistics
-  - [ ] Add viewing kicker statistics (make sure to check if a player is a kicker)
+  - [x] Add viewing kicker statistics (make sure to check if a player is a kicker)
   - [ ] Add viewing defense statistics
   - [x] Add list of all players
   - [x] Add list of all teams
