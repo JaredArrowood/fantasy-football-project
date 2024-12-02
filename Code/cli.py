@@ -441,6 +441,94 @@ def player_statistics(db):
             headers = ["Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
             print_table(headers, rest)
 
+def print_matchup(matchup_data):
+    """Format and print a single matchup"""
+    home_team, away_team, home_points, away_points, week = matchup_data
+    print("===================================")
+    print(f"Week {week}")
+    print(f"{home_team:<20} {home_points:>5.1f}")
+    print(f"{away_team:<20} {away_points:>5.1f}")
+    print("===================================")
+
+def view_current_matchup(db):
+    print("===================================")
+    print("Current Week Matchup")
+    print("===================================")
+    
+    db.execute('''
+        SELECT MAX(week) FROM matchup
+    ''')
+    current_week = db.fetchone()[0]
+    
+    db.execute('''
+        SELECT 
+            h.team_name as home_team,
+            a.team_name as away_team,
+            m.home_team_points,
+            m.away_team_points,
+            m.week
+        FROM matchup m
+        JOIN team h ON m.home_team_id = h.team_id
+        JOIN team a ON m.away_team_id = a.team_id
+        WHERE m.week = ?
+        AND (h.email = ? OR a.email = ?)
+    ''', (current_week, USER.email, USER.email))
+    
+    matchup = db.fetchone()
+    if matchup:
+        print_matchup(matchup)
+    else:
+        print("> No current matchup found")
+
+def view_week_matchups(db):
+    week = input("Enter week number (1-17): ")
+    if not week.isdigit() or int(week) < 1 or int(week) > 17:
+        print("> Invalid week number")
+        return
+        
+    db.execute('''
+        SELECT 
+            h.team_name as home_team,
+            a.team_name as away_team,
+            m.home_team_points,
+            m.away_team_points,
+            m.week
+        FROM matchup m
+        JOIN team h ON m.home_team_id = h.team_id
+        JOIN team a ON m.away_team_id = a.team_id
+        WHERE m.week = ?
+        ORDER BY m.home_team_points + m.away_team_points DESC
+    ''', (week,))
+    
+    matchups = db.fetchall()
+    if matchups:
+        print(f"\n=== Week {week} Matchups ===")
+        for matchup in matchups:
+            print_matchup(matchup)
+    else:
+        print(f"> No matchups found for week {week}")
+
+def matchup_menu(db):
+    while True:
+        print("===================================")
+        print("Matchup Menu")
+        print("===================================")
+        print("1. View Current Matchup")
+        print("2. View Week's Matchups")
+        print("Q. Back to Main Menu")
+        print("===================================")
+        
+        choice = input("Enter your choice: ")
+        
+        if choice == "1":
+            view_current_matchup(db)
+        elif choice == "2":
+            view_week_matchups(db)
+        elif choice.upper() == "Q":
+            break
+        else:
+            print("> Invalid choice")
+
 def view_all_players(db):
     while True:
         print("===================================")
@@ -494,6 +582,7 @@ if __name__ == "__main__":
         print(f"1. {USER.username}'s Roster")
         print("2. View Player Statistics")
         print("3. View all players")
+        print("4. Matchups")  # New option
         print("L. Logout")
         print("===================================")
 
@@ -508,5 +597,7 @@ if __name__ == "__main__":
             player_statistics(db)
         elif choice == "3":
             view_all_players(db)
+        elif choice == "4":
+            matchup_menu(db)
         else:
             print("> Invalid choice. Please try again.")
