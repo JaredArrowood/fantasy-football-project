@@ -2,20 +2,22 @@ import sqlite3
 from espn_api.football import League
 from espn_api.football import Team
 import os
+from dotenv import load_dotenv
+
+load_dotenv('.env')
 
 # Database connection
 conn = sqlite3.connect('fantasy_league.db')
 cursor = conn.cursor()
 
-env_espn_s2 = os.getenv('ESPN_2')
-env_swid = os.getenv('SW_ID')
-
+env_espn_s2 = os.getenv('espn_s2')
+env_swid = os.getenv('swid')
 # ESPN API League setup
 league = League(
     league_id=2144731,  # Your league ID
     year=2024,          # Fantasy season year
-    espn_s2=env_espn_s2,  # Replace with your espn_s2 cookie
-    swid= env_swid      # Replace with your swid cookie
+    espn_s2=env_espn_s2,
+    swid=env_swid
 )
 
 # Team name mapping function
@@ -211,15 +213,12 @@ def populate_weekly_stats(week):
     """
     for team in league.teams:
         for player in team.roster:
-            # Check if stats are available for the given week
-            if week in player.stats:
-                stats = player.stats.get(week, {})  # Fetch stats for the week
-            else:
-                stats = {}  # Default to empty stats if unavailable
+            player_details = league.player_info(playerId=player.playerId)
+            stats = player_details.stats.get(week, {})
          
             try:
                 if player.position == "K":  # Kicker stats
-                    team_stats = player.stats.get(week, {})
+                    team_stats = player_details.stats.get(week, {})
                     field_goals_made = float(team_stats.get('breakdown', {}).get('madeFieldGoalsFromUnder40', 0) +
                                             team_stats.get('breakdown', {}).get('madeFieldGoalsFrom40To49', 0) +
                                             team_stats.get('breakdown', {}).get('madeFieldGoalsFrom60Plus', 0))
@@ -264,7 +263,7 @@ def populate_weekly_stats(week):
                         player.lineupSlot != "BE"  
                     ))
                 elif player.position == "D/ST":  # Defensive stats
-                    team_stats = player.stats.get(week, {})
+                    team_stats = player_details.stats.get(week, {})
                     
                     yards_allowed = float(team_stats.get('breakdown', {}).get('defensiveYardsAllowed', 0))
                     points_allowed = float(team_stats.get('breakdown', {}).get('defensivePointsAllowed', 0))
@@ -300,15 +299,13 @@ def populate_weekly_fa_stats(week):
         free_agents = league.free_agents(position=position, size=10)  # Get top 10 free agents for the position
 
         for player in free_agents:
-            if week in player.stats:
-                stats = player.stats.get(week, {})  # Fetch stats for the week
-            else:
-                stats = {}  # Default to empty stats if unavailable
+            player_details = league.player_info(playerId=player.playerId)
+            stats = player_details.stats.get(week, {})
            
             try:
                 if player.position == "K":  # Kicker stats
                 
-                    team_stats = player.stats.get(week, {})
+                    team_stats = player_details.stats.get(week, {})
                     field_goals_made = float(team_stats.get('breakdown', {}).get('madeFieldGoals', 0))
                     field_goals_attempted = float(team_stats.get('breakdown', {}).get('attemptedFieldGoals', 0))
                     extra_points_made = float(team_stats.get('breakdown', {}).get('madeExtraPoints', 0))
@@ -352,7 +349,7 @@ def populate_weekly_fa_stats(week):
                         player.injured  # Assuming injured status determines is_starting
                     ))
                 elif player.position == "D/ST":  # Defensive stats
-                    team_stats = player.stats.get(week, {})
+                    team_stats = player_details.stats.get(week, {})
                     
                     yards_allowed = float(team_stats.get('breakdown', {}).get('defensiveYardsAllowed', 0))
                     points_allowed = float(team_stats.get('breakdown', {}).get('defensivePointsAllowed', 0))
