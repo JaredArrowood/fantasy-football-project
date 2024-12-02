@@ -736,6 +736,90 @@ def player_def_menu(db):
         else:
             print("> Invalid choice")
 
+def change_password(db):
+    while True:
+        print("===================================")
+        print("Change Password")
+        print("===================================")
+        current_password = input("Enter your current password (Q to quit): ")
+        if current_password.lower() == "q":
+            break
+        if check_password(db, current_password, USER.email):
+            new_password = input("Enter your new password (Q to quit): ")
+            if new_password.lower() == "q":
+                break
+            db.execute('''UPDATE user
+                        SET password = ?
+                        WHERE email = ?''', (new_password, USER.email))
+            db_connection.commit()
+            print("> Password changed successfully")
+            break
+        else:
+            print("> Incorrect password. Please try again")
+
+def rename_team(db):
+    while True:
+        print("===================================")
+        print("Rename Team")
+        print("===================================")
+        new_team_name = input(f"What would you like to rename {USER.team_name} to? (Q to quit): ")
+        if new_team_name.lower() == "q":
+            break
+        db.execute('''UPDATE team
+                    SET team_name = ?
+                    WHERE email = ?''', (new_team_name, USER.email))
+        db_connection.commit()
+        USER.team_name = new_team_name
+        print(f"> Team renamed to {new_team_name}")
+        break
+
+def delete_account(db):
+    while True:
+        print("===================================")
+        print("Delete Account")
+        print("===================================")
+        print("> Warning: You're team will not be deleted to keep the integrity of the league.")
+        confirm = input("Are you sure you want to delete your account? (Y/N): ")
+        if confirm.lower() == "y":
+            db.execute('''DELETE FROM user
+                        WHERE email = ?''', (USER.email,))
+            db.execute('''UPDATE team
+                        SET email = 'NA'
+                        WHERE email = ?''', (USER.email,))
+            db_connection.commit()
+            print("> Account deleted successfully")
+            main_menu(db)
+            break
+        elif confirm.lower() == "n":
+            break
+        else:
+            print("> Invalid choice")
+
+def user_settings_menu(db):
+    while True:
+        print("===================================")
+        print("User Settings Menu")
+        print("===================================")
+        print("1. Change Password")
+        print("2. Rename Team")
+        print("3. Delete Account")
+        print("Q: Back to Main Menu")
+        print("===================================")
+        
+        choice = input("Enter your choice: ")
+        
+        if choice == "1":
+            change_password(db)
+        elif choice == "2":
+            rename_team(db)
+        elif choice == "3":
+            delete_account(db)
+            break
+        elif choice.upper() == "Q":
+            break
+        else:
+            print("> Invalid choice")
+
 if __name__ == "__main__":
     db_connection = sqlite3.connect(CONNECTION_STRING)
     db = db_connection.cursor()
@@ -749,6 +833,7 @@ if __name__ == "__main__":
         print("2. Statistics")
         print("3. Players and Defenses")
         print("4. Matchups")  # New option
+        print("5. User Settings")
         print("L. Logout")
         print("===================================")
 
@@ -765,5 +850,7 @@ if __name__ == "__main__":
             player_def_menu(db)
         elif choice == "4":
             matchup_menu(db)
+        elif choice == "5":
+            user_settings_menu(db)
         else:
             print("> Invalid choice. Please try again.")
