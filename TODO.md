@@ -6,9 +6,12 @@
   - [x] Add viewing defense statistics
   - [x] Add list of all players
   - [x] Add list of all teams
-- [ ] Matchups
-  - [ ] Add list of all matchups for a given week
-  - [ ] View the current user's matchup for a given week
-- [ ] Teams
+- [x] Matchups
+  - [x] Add list of all matchups for a given week
+  - [x] View the current user's matchup for a given week
+- [x] Teams
   - [x] Be able to change a team's starting lineup
-  - [ ] Delete team
+- [ ] User
+  - [ ] Delete account
+  - [ ] Update password
+  - [ ] Update team name

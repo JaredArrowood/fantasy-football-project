@@ -691,7 +691,51 @@ def view_all_defenses(db):
     headers = ["Team"]
     print_table(headers, results)
 
-    
+def statistics_menu(db):
+    while True:
+        print("===================================")
+        print("Statistics Menu")
+        print("===================================")
+        print("1. View Player Statistics")
+        print("2. View Kicker Statistics")
+        print("3. View Defense Statistics")
+        print("Q: Back to Main Menu")
+        print("===================================")
+        
+        choice = input("Enter your choice: ")
+        
+        if choice == "1":
+            player_statistics(db)
+        elif choice == "2":
+            kicker_statistics(db)
+        elif choice == "3":
+            defense_statistics(db)
+        elif choice.upper() == "Q":
+            break
+        else:
+            print("> Invalid choice")
+
+def player_def_menu(db):
+    while True:
+        print("===================================")
+        print("Statistics Menu")
+        print("===================================")
+        print("1. View All Players")
+        print("2. View Available Defenses")
+        print("Q: Back to Main Menu")
+        print("===================================")
+        
+        choice = input("Enter your choice: ")
+        
+        if choice == "1":
+            view_all_players(db)
+        elif choice == "2":
+            view_all_defenses(db)
+        elif choice.upper() == "Q":
+            break
+        else:
+            print("> Invalid choice")
+
 if __name__ == "__main__":
     db_connection = sqlite3.connect(CONNECTION_STRING)
     db = db_connection.cursor()
@@ -702,12 +746,9 @@ if __name__ == "__main__":
         print("Home Menu")
         print("===================================")
         print(f"1. Manage {USER.team_name}")
-        print("2. View Player Statistics")
-        print("2.1 View Kicker Statistics")
-        print("2.2 View Defense Statistics")
-        print("3. View all players")
-        print("4. View available defenses")
-        print("5. Matchups")  # New option
+        print("2. Statistics")
+        print("3. Players and Defenses")
+        print("4. Matchups")  # New option
         print("L. Logout")
         print("===================================")
 
@@ -719,16 +760,10 @@ if __name__ == "__main__":
         elif choice == "1":
             roster_menu(db)
         elif choice == "2":
-            player_statistics(db)
-        elif choice == "2.1":
-            kicker_statistics(db)
-        elif choice == "2.2":
-            defense_statistics(db)
+            statistics_menu(db)
         elif choice == "3":
-            view_all_players(db)
+            player_def_menu(db)
         elif choice == "4":
-            view_all_defenses(db)
-        elif choice == "5":
             matchup_menu(db)
         else:
             print("> Invalid choice. Please try again.")
