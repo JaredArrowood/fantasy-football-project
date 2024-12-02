@@ -1,17 +1,21 @@
 import sqlite3
 from espn_api.football import League
 from espn_api.football import Team
+import os
 
 # Database connection
 conn = sqlite3.connect('fantasy_league.db')
 cursor = conn.cursor()
 
+env_espn_s2 = os.getenv('ESPN_2')
+env_swid = os.getenv('SW_ID')
+
 # ESPN API League setup
 league = League(
     league_id=2144731,  # Your league ID
     year=2024,          # Fantasy season year
-    espn_s2="AEB6N9U4WIkrBzbD%2FiNeUI%2FKJP1Y2sN4pwxcgZKHT8z%2BHnIVaKnTe5mBWqJWC9ySkNRomw%2BYZIF8rRfFXl4ZSS15VBLeczrOT1SAWyih7Mw4VulziUoq3pUw8ozP9zAkvKcbzMCt2eMr349g7rKjEFxgRFBNZhToy3ferv33g2p7YpbpxIVDPY7Ifte6RVZVqVn3h7Pvlamvo%2BHX97sot%2F0Cmp9sDBIGKoWyT9brp1LPw%2F3YoYxXD6HTtXo7QkMatSSdYZqJCGqxtNE2GavF6Zn9JgKQog05fd8Gz%2BrqAdu%2Fmw%3D%3D",  # Replace with your espn_s2 cookie
-    swid="{8B95A023-6BA3-45E0-B398-1063ED5EB638}"       # Replace with your swid cookie
+    espn_s2=env_espn_s2,  # Replace with your espn_s2 cookie
+    swid= env_swid      # Replace with your swid cookie
 )
 
 # Team name mapping function

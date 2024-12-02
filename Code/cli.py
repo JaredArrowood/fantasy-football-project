@@ -77,8 +77,7 @@ def count_players_by_position(db, email, position):
 
     result = db.fetchone()
     return result[0]
-    
-                   
+            
 #checks for the number of starting players in each position (Still needs Defense)
 def check_starting_player_counts(db):
     print("Starting Player Counts:")
@@ -110,7 +109,6 @@ def check_starting_player_counts(db):
 
     # return True
     
-
 # use email and password to login
 def login(db):
     global USER
@@ -152,15 +150,15 @@ def register(db):
                 password = input("Enter your password: ")
                 db.execute('''INSERT INTO user (email, username, password)
                             VALUES (?, ?, ?)''', (email, username, password))
+                
+                team_name = input("Enter your team name: ")
+                db.execute('''INSERT INTO team (team_name, email)
+                            VALUES (?, ?)''', (team_name, USER.email))
                 db_connection.commit()
-                USER = User(email, username, password)
+                USER = User(email, username, password, team_name)
                 break
 
     # team creation
-    team_name = input("Enter your team name: ")
-    db.execute('''INSERT INTO team (team_name, email)
-                VALUES (?, ?)''', (team_name, USER.email))
-    db_connection.commit()
     
     print(f"Welcome to the CLI Fantasy League, {USER.username}!")
     return True
