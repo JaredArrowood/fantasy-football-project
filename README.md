@@ -1,32 +1,36 @@
-# fantasy-football-project
+# CLI Fantasy Football (CLIFF)
 
-## Prerequisites
+## Instructions for the test queries
 
-1. create the virtual encvironment
+1. From the commandline, run the following command to startup the sqlite shell:
 
-   > python3 -m venv venv
+   ```cmd
+   sqlite3 fantasy_league.db
+   ```
 
-2. activate the venv
+2. To run each SQL query, type the name of the query file in the commandline. For example:
 
-   > .\venv\Scripts\activate.ps1 (for powershell)
+   ```cmd
+   .read test_query_1.sql
+   ```
 
-   > .\venv\Scripts\activate.bat (for cmdline)
+3. To exit the sqlite3 shell, type:
 
-   > .\venv\Scripts\activate (if neither work)
+   ```cmd
+   .exit
+   ```
 
-(if your system says you can't run scripts, run:
+## Instructions to run the CLI
 
-> Get-ExecutionPolicy -Scope CurrentUser
+1. Make sure you're in the project directory. If you are in the Code directory, it will create a new database file in the Code directory, which is not what you want.
 
-if it is restricted or undefined, run:
+2. From the commandline, run the following command to startup CLIFF:
 
-> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser)
+   ```cmd
+   python Code/cli.py
+   ```
 
-3. install requirements
-   > pip install -r requirements.txt
+3. Follow the instructions on the screen to navigate through the CLI. If you want an account that is already populated with data, use the following credentials:
 
-## Orders of bizness
-
-1. Create CLI
-2. Create a DB
-3. Put it all together
+   - Username: `JJefferson@gmail.com`
+   - Password: `password2`
