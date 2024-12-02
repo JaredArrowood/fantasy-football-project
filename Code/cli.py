@@ -2,12 +2,13 @@
 import sqlite3
 
 class User():
-    def __init__(self, email, username, password):
+    def __init__(self, email, username, password, team_name):
         self.email = email
         self.username = username
         self.password = password
+        self.team_name = team_name
 CONNECTION_STRING = 'fantasy_league.db'
-USER = User("", "", "")
+USER = User("", "", "", "")
 
 def print_table(headers, data):
     # Determine the width of each column
@@ -58,10 +59,13 @@ def find_team_players(db, email):
     return db.fetchall()
 
 def count_players_by_position(db, email, position):
-    db.execute('''WITH team_players(player_id, is_starting) AS 
+    statistics = 'player_statistics'
+    if position.lower() == 'k':
+        statistics = 'kicker_statistics'
+    db.execute(f'''WITH team_players(player_id, is_starting) AS 
                     (SELECT DISTINCT player.player_id, is_starting
-                    FROM team, player, player_statistics
-                    WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = player_statistics.player_id),
+                    FROM team, player, {statistics}
+                    WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = {statistics}.player_id),
                         roster_stats(player_name, position, real_team, is_starting) AS 
                             (SELECT player_name, position, real_team, is_starting
                             FROM team_players, player
@@ -73,8 +77,7 @@ def count_players_by_position(db, email, position):
 
     result = db.fetchone()
     return result[0]
-    
-                   
+            
 #checks for the number of starting players in each position (Still needs Defense)
 def check_starting_player_counts(db):
     print("Starting Player Counts:")
@@ -106,7 +109,6 @@ def check_starting_player_counts(db):
 
     # return True
     
-
 # use email and password to login
 def login(db):
     global USER
@@ -119,10 +121,10 @@ def login(db):
                     return False
                 else:
                     #set default USER to the stored user values in the table
-                    db.execute('''SELECT * from user
-                                WHERE email = ?''', (email,))
+                    db.execute('''SELECT * from user, team
+                                WHERE user.email = ? AND team.email = ?''', (email, email))
                     result = db.fetchone()
-                    USER = User(result[0], result[1], result[2])
+                    USER = User(result[0], result[1], result[2], result[4])
 
                     print(f"Welcome back, {USER.username}!")
                     break
@@ -148,15 +150,15 @@ def register(db):
                 password = input("Enter your password: ")
                 db.execute('''INSERT INTO user (email, username, password)
                             VALUES (?, ?, ?)''', (email, username, password))
+                
+                team_name = input("Enter your team name: ")
+                db.execute('''INSERT INTO team (team_name, email)
+                            VALUES (?, ?)''', (team_name, USER.email))
                 db_connection.commit()
-                USER = User(email, username, password)
+                USER = User(email, username, password, team_name)
                 break
 
     # team creation
-    team_name = input("Enter your team name: ")
-    db.execute('''INSERT INTO team (team_name, email)
-                VALUES (?, ?)''', (team_name, USER.email))
-    db_connection.commit()
     
     print(f"Welcome to the CLI Fantasy League, {USER.username}!")
     return True
@@ -220,6 +222,17 @@ def roster_menu(db):
                             WHERE team_players.player_id = player.player_id
                         ''', (USER.email,))
             results = db.fetchall()
+
+            db.execute('''WITH team_players(player_id, is_starting) AS 
+                    (SELECT DISTINCT player.player_id, is_starting
+                    FROM team, player, kicker_statistics
+                    WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = kicker_statistics.player_id)
+
+                        SELECT player_name, position, real_team, is_starting
+                            FROM team_players, player
+                            WHERE team_players.player_id = player.player_id
+                        ''', (USER.email,))
+            results.extend(db.fetchall())
             clean_results = [(*item[:-1], bool(item[-1])) for item in results] # convert 0/1 to True/False
             headers = ["Player Name", "Position", "Real Team", "Is Starting"]
             print_table(headers, clean_results)
@@ -322,7 +335,7 @@ def roster_menu(db):
                     quit = True
                     continue
                 # check if the player exists
-                db.execute('''SELECT player_name, team_id
+                db.execute('''SELECT player_name, team_id, position
                             FROM player
                             WHERE player_name = ?''', (player_name,))
                 condition = db.fetchone()
@@ -344,9 +357,12 @@ def roster_menu(db):
                         continue
                     else:
                         quit = True
+                        statistics = 'player_statistics'
+                        if condition[2].lower() == 'k':
+                            statistics = 'kicker_statistics'
                         #check if the player is already starting
-                        db.execute('''SELECT is_starting
-                                   FROM player_statistics
+                        db.execute(f'''SELECT is_starting
+                                   FROM {statistics}
                                    WHERE player_id = (SELECT player_id
                                                       FROM player
                                                       WHERE player_name = ?)''', (player_name,))
@@ -355,8 +371,8 @@ def roster_menu(db):
                             print("> Player is already starting.")
                             bench = input("Would you like to bench them? (Y/N): ")
                             if(bench == "Y"):
-                                db.execute('''
-                                    UPDATE player_statistics
+                                db.execute(f'''
+                                    UPDATE {statistics}
                                     SET is_starting = False
                                     WHERE player_id = (SELECT player_id
                                                       FROM player
@@ -377,16 +393,26 @@ def roster_menu(db):
                                        FROM team_players
                                        WHERE is_starting = True''', (USER.email,))
                             count = db.fetchone()[0]
-                            print(count)
+                            
+                            # counting kicker stats
+                            db.execute('''WITH team_players(player_id, is_starting) AS 
+                                        (SELECT DISTINCT player.player_id, is_starting
+                                            FROM team, player, kicker_statistics
+                                            WHERE player.team_id = team.team_id AND team.email = ? AND player.player_id = kicker_statistics.player_id)
+                                       
+                                       SELECT COUNT(*)
+                                       FROM team_players
+                                       WHERE is_starting = True''', (USER.email,))
+                            count += db.fetchone()[0]
                             if(count >= 9):
                                 print("> You already have 9 players starting. Please bench a player.")
                                 continue
                             else:
-                                start = input(f"> {player_name} is not starting. Would you like to start them? (Y/N):")
+                                start = input(f"> {player_name} is not starting. Would you like to start them? (Y/N): ")
                                 if(start == "Y"):
                             
-                                    db.execute('''
-                                        UPDATE player_statistics
+                                    db.execute(f'''
+                                        UPDATE {statistics}
                                         SET is_starting = True
                                         WHERE player_id = (SELECT player_id
                                                         FROM player
@@ -438,6 +464,7 @@ def player_statistics(db):
         else:
             # displaying everything except the player_id
             rest = [result[1:] for result in results]
+            rest = [(*item[:-1], bool(item[-1])) for item in rest] # convert 0/1 to True/False
             headers = ["Week", "Passing Yards", "Rushing Yards", "Rec. Yards", "Passing TDs", "Rushing TDs", "Rec. TDs", "Receptions", "Fumbles", "Ints", "Total Points", "Is Starting"]
             print_table(headers, rest)
 
@@ -529,6 +556,88 @@ def matchup_menu(db):
         else:
             print("> Invalid choice")
 
+def kicker_statistics(db):
+    print("===================================")
+    print("Viewing Kicker Statistics")
+    print("===================================")
+    #Should return the selected player's statistics for a given week
+    while(True):
+        player_name = input("Enter the player's name: (Q to Quit) ")
+        if player_name.lower() == "q":
+            break
+        week = input("Enter the week (A to view all weeks): ")
+        query = '''SELECT * 
+                    FROM kicker_statistics
+                    WHERE player_id = (SELECT player_id
+                                        FROM player
+                                        WHERE player_name = ?'''
+        params = [player_name]
+        if (week != "A" and week != "a"):
+            # check if the week is a number
+            if not week.isdigit():
+                print("> Invalid week. Please try again.")
+                continue
+            query += " AND week = ?"
+            params.append(week)
+        query += ")"
+
+        db.execute(query, params)
+
+        results = db.fetchall()
+        if len(results) == 0:
+            msg = f"> No kicking statistics found for {player_name}"
+            if week != "A" and week != "a":
+                msg += f" in Week {week}"
+            print("===================================")
+            print(msg)
+        else:
+            # displaying everything except the player_id
+            rest = [result[1:] for result in results]
+            rest = [(*item[:-1], bool(item[-1])) for item in rest] # convert 0/1 to True/False
+            headers = ["Week", "Field Goals Made", "Field Goals Attempted", "Extra Points Made", "Extra Points Attempted", "Total Points", "Is Starting"]
+            print_table(headers, rest)
+
+def defense_statistics(db):
+    print("===================================")
+    print("Viewing Defense/ST Statistics")
+    print("===================================")
+    #Should return the selected player's statistics for a given week
+    while(True):
+        defense_name = input("Enter the teams's name: (Q to Quit) ")
+        if defense_name.lower() == "q":
+            break
+        week = input("Enter the week (A to view all weeks): ")
+        query = '''SELECT * 
+                    FROM defense_st_statistics
+                    WHERE defense_st_id = (SELECT defense_st_id
+                                        FROM defense_st
+                                        WHERE real_team = ?'''
+        params = [defense_name]
+        if (week != "A" and week != "a"):
+            # check if the week is a number
+            if not week.isdigit():
+                print("> Invalid week. Please try again.")
+                continue
+            query += " AND week = ?"
+            params.append(week)
+        query += ")"
+
+        db.execute(query, params)
+
+        results = db.fetchall()
+        if len(results) == 0:
+            msg = f"> No defense/st statistics found for {defense_name}"
+            if week != "A" and week != "a":
+                msg += f" in Week {week}"
+            print("===================================")
+            print(msg)
+        else:
+            # displaying everything except the player_id
+            rest = [result[1:] for result in results]
+            rest = [(*item[:-1], bool(item[-1])) for item in rest] # convert 0/1 to True/False
+            headers = ["Week", "Interceptions", "Defensive TDs", "Fumbles Recovered", "Sacks", "Yds. Allowed", "Points Allowed", "Total Points", "Is Starting"]
+            print_table(headers, rest)
+
 def view_all_players(db):
     while True:
         print("===================================")
@@ -570,19 +679,35 @@ def view_all_players(db):
         headers = ["Player Name", "Position", "Real Team"]
         print_table(headers, results)
 
+def view_all_defenses(db):
+    print("===================================")
+    print("Viewing All Defenses")
+    print("===================================")
 
+    db.execute('''SELECT real_team
+                FROM defense_st
+               WHERE team_id = 0 OR team_id IS NULL''')
+    results = db.fetchall()
+    headers = ["Team"]
+    print_table(headers, results)
+
+    
 if __name__ == "__main__":
     db_connection = sqlite3.connect(CONNECTION_STRING)
     db = db_connection.cursor()
     main_menu(db)
 
     while(True):
+        print("===================================")
         print("Home Menu")
         print("===================================")
-        print(f"1. {USER.username}'s Roster")
+        print(f"1. Manage {USER.team_name}")
         print("2. View Player Statistics")
+        print("2.1 View Kicker Statistics")
+        print("2.2 View Defense Statistics")
         print("3. View all players")
-        print("4. Matchups")  # New option
+        print("4. View available defenses")
+        print("5. Matchups")  # New option
         print("L. Logout")
         print("===================================")
 
@@ -595,9 +720,15 @@ if __name__ == "__main__":
             roster_menu(db)
         elif choice == "2":
             player_statistics(db)
+        elif choice == "2.1":
+            kicker_statistics(db)
+        elif choice == "2.2":
+            defense_statistics(db)
         elif choice == "3":
             view_all_players(db)
         elif choice == "4":
+            view_all_defenses(db)
+        elif choice == "5":
             matchup_menu(db)
         else:
             print("> Invalid choice. Please try again.")
