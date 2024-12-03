@@ -635,7 +635,7 @@ def defense_statistics(db):
             # displaying everything except the player_id
             rest = [result[1:] for result in results]
             rest = [(*item[:-1], bool(item[-1])) for item in rest] # convert 0/1 to True/False
-            headers = ["Week", "Interceptions", "Defensive TDs", "Fumbles Recovered", "Sacks", "Yds. Allowed", "Points Allowed", "Total Points", "Is Starting"]
+            headers = ["Week", "Interceptions", "Defensive TDs", "Fumbles Recieved", "Sacks", "Yds. Allowed", "Points Allowed", "Total Points", "Is Starting"]
             print_table(headers, rest)
 
 def view_all_players(db):
@@ -784,7 +784,7 @@ def delete_account(db):
             db.execute('''DELETE FROM user
                         WHERE email = ?''', (USER.email,))
             db.execute('''UPDATE team
-                        SET email = 'NA'
+                        SET email = NULL
                         WHERE email = ?''', (USER.email,))
             db_connection.commit()
             print("> Account deleted successfully")

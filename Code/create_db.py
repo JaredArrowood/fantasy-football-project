@@ -29,7 +29,7 @@ db.execute('''
 CREATE TABLE team (
     team_id INTEGER PRIMARY KEY AUTOINCREMENT,
     team_name CHAR(100) NOT NULL,
-    email TEXT NOT NULL unique,
+    email TEXT NULL unique,
     FOREIGN KEY (email) REFERENCES user(email)
 )
 ''')
@@ -119,7 +119,7 @@ CREATE TABLE defense_st_statistics (
     week INTEGER NOT NULL,
     interceptions REAL NOT NULL,
     def_touchdowns REAL NOT NULL,
-    fumbles_recovered REAL NOT NULL,
+    fumbles_received REAL NOT NULL,
     sacks REAL NOT NULL,
     yards_allowed REAL NOT NULL,  
     points_allowed REAL NOT NULL,
