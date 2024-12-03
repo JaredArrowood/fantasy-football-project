@@ -233,6 +233,16 @@ def roster_menu(db):
                             WHERE team_players.player_id = player.player_id
                         ''', (USER.email,))
             results.extend(db.fetchall())
+            #get defense team
+            db.execute('''
+                        SELECT real_team
+                        FROM defense_st
+                        WHERE team_id = (SELECT team_id
+                                        FROM team   
+                                        WHERE email = ?)''', (USER.email,))
+            defense = db.fetchone()
+            if defense is not None:
+                results.append((defense[0], "Defense", defense[0], True))
             clean_results = [(*item[:-1], bool(item[-1])) for item in results] # convert 0/1 to True/False
             headers = ["Player Name", "Position", "Real Team", "Is Starting"]
             print_table(headers, clean_results)
@@ -778,7 +788,7 @@ def delete_account(db):
         print("===================================")
         print("Delete Account")
         print("===================================")
-        print("> Warning: You're team will not be deleted to keep the integrity of the league.")
+        print("> Warning: Your team will not be deleted to keep the integrity of the league.")
         confirm = input("Are you sure you want to delete your account? (Y/N): ")
         if confirm.lower() == "y":
             db.execute('''DELETE FROM user
