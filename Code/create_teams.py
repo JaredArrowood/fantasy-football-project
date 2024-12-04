@@ -79,10 +79,6 @@ def modify_username(original_name, team_number):
         return "pnacua"
     elif team_number == 10:
         return "sbarkley"
-    elif team_number == 11:
-        return "AdamBenUsername"
-    elif team_number == 12:
-        return "BBortles"
 
     return f"Fantasy {original_name.split()[-1]}"
 # Populate teams in the database
@@ -135,7 +131,10 @@ for team in league.teams:
 positions = ["QB", "RB", "WR", "TE", "K", "D/ST"]
 for position in positions:
     free_agents = league.free_agents(position=position)  # Get free agents for the position
-    top_free_agents = free_agents[:10]  # Limit to the top 10
+    if position == "D/ST":
+        top_free_agents = free_agents[:13]  # Limit to the top 13
+    else:
+        top_free_agents = free_agents[:10]  # Limit to the top 10
 
     for player in top_free_agents:
         try:
@@ -272,7 +271,7 @@ def populate_weekly_stats(week):
     
                     cursor.execute("""
                         INSERT INTO defense_st_statistics (
-                            defense_st_id, week, interceptions, def_touchdowns, fumbles_recovered, sacks,
+                            defense_st_id, week, interceptions, def_touchdowns, fumbles_received, sacks,
                             yards_allowed, points_allowed, total_points, is_starting
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
@@ -296,7 +295,10 @@ def populate_weekly_stats(week):
 def populate_weekly_fa_stats(week):
     positions = ["QB", "RB", "WR", "TE", "K", "D/ST"]
     for position in positions:
-        free_agents = league.free_agents(position=position, size=10)  # Get top 10 free agents for the position
+        if position == "D/ST":
+            free_agents = league.free_agents(position=position, size=13)
+        else:
+            free_agents = league.free_agents(position=position, size=10)  # Get top 10 free agents for the position
 
         for player in free_agents:
             player_details = league.player_info(playerId=player.playerId)
@@ -358,7 +360,7 @@ def populate_weekly_fa_stats(week):
     
                     cursor.execute("""
                         INSERT INTO defense_st_statistics (
-                            defense_st_id, week, interceptions, def_touchdowns, fumbles_recovered, sacks,
+                            defense_st_id, week, interceptions, def_touchdowns, fumbles_received, sacks,
                             yards_allowed, points_allowed, total_points, is_starting
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
